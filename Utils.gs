@@ -123,7 +123,7 @@ function gerarVersaoProcessamento(competencia) {
 }
 
 function registrarExecucao(idProcessamento, competencia, versao, dataInicio, status, observacao) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
   const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.EXECUCOES);
 
   if (sheet.getLastRow() === 0) {
@@ -143,7 +143,7 @@ function registrarExecucao(idProcessamento, competencia, versao, dataInicio, sta
 }
 
 function finalizarExecucao(idProcessamento, dataFim, status, observacao) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
   const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.EXECUCOES);
   const values = sheet.getDataRange().getValues();
 
@@ -158,7 +158,7 @@ function finalizarExecucao(idProcessamento, dataFim, status, observacao) {
 }
 
 function registrarErro(idProcessamento, acao, mensagem, detalhe) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
   const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.ERROS);
 
   if (sheet.getLastRow() === 0) {
