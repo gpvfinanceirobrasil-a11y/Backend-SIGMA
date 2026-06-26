@@ -9,6 +9,7 @@ function handleGet(e) {
     if (action === 'getMGR') return jsonResponse(getMGR());
     if (action === 'getResultadoAtual') return jsonResponse(getResultadoAtual());
     if (action === 'getHistorico') return jsonResponse(getHistorico(e.parameter));
+    if (action === 'getCentroControle') return jsonResponse(getCentroControle(e.parameter));
     if (action === 'listarCompetencias') return jsonResponse(listarCompetencias());
 
     return jsonResponse({
