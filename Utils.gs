@@ -1,21 +1,42 @@
-function uploadRows(sheetName, rows) {
-  if (!Array.isArray(rows)) throw new Error('rows deve ser um array.');
+function uploadRows(sheetName, rows, meta) {
+  if (!Array.isArray(rows)) {
+    throw new Error('rows deve ser um array.');
+  }
 
   const ss = getSigmaSpreadsheet();
   const sheet = getOrCreateSheet(ss, sheetName);
 
-  if (rows.length === 0) return { ok: true, sheet: sheetName, inserted: 0 };
-
-  const headers = Object.keys(rows[0]);
+  const headers = DATABASE[sheetName] || Object.keys(rows[0] || {});
 
   sheet.clearContents();
   sheet.appendRow(headers);
 
-  const values = rows.map(row => headers.map(h => row[h] ?? ''));
+  if (rows.length === 0) {
+    return {
+      ok: true,
+      message: 'Nenhuma linha enviada.',
+      sheet: sheetName,
+      inserted: 0
+    };
+  }
+
+  const values = rows.map(row => {
+    return headers.map(header => row[header] ?? '');
+  });
+
   sheet.getRange(2, 1, values.length, headers.length).setValues(values);
 
+  const idImportacao = registrarImportacao(sheetName, rows.length, meta || {});
+
   logAction('uploadRows', `${rows.length} linhas inseridas em ${sheetName}.`);
-  return { ok: true, sheet: sheetName, inserted: rows.length };
+
+  return {
+    ok: true,
+    message: 'Upload realizado com sucesso.',
+    sheet: sheetName,
+    inserted: rows.length,
+    id_importacao: idImportacao
+  };
 }
 
 function readSheetAsObjects(sheetName) {
@@ -192,4 +213,40 @@ function normalizar(value) {
 }
 function getSigmaSpreadsheet() {
   return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+}
+function registrarImportacao(tipoArquivo, quantidadeLinhas, meta) {
+  const ss = getSigmaSpreadsheet();
+  const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.IMPORTACOES);
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(DATABASE.importacoes);
+  }
+
+  const idImportacao = gerarIdImportacao();
+
+  sheet.appendRow([
+    idImportacao,
+    meta?.id_processamento || '',
+    meta?.competencia || '',
+    tipoArquivo,
+    meta?.nome_arquivo || '',
+    quantidadeLinhas,
+    new Date(),
+    meta?.usuario || '',
+    'importado',
+    meta?.observacao || ''
+  ]);
+
+  return idImportacao;
+}
+
+function gerarIdImportacao() {
+  const agora = new Date();
+  const data = Utilities.formatDate(
+    agora,
+    Session.getScriptTimeZone(),
+    'yyyyMMddHHmmss'
+  );
+
+  return `IMP-${data}`;
 }
