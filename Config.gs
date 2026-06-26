@@ -1,4 +1,6 @@
 const CONFIG = {
+ SPREADSHEET_ID: '1o1ndsuDex-OYnj8x8RQ2--hHgEy2Wm964x7plV0pGgY',
+
   SHEETS: {
     RECEITAS: 'receitas',
     DESPESAS: 'despesas',
