@@ -190,3 +190,6 @@ function normalizar(value) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 }
+function getSigmaSpreadsheet() {
+  return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+}
