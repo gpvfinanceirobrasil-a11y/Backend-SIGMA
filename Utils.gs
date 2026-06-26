@@ -106,3 +106,87 @@ function errorResponse(err) {
     stack: err.stack || null
   };
 }
+
+// =====================================================
+// SIGMA CORE
+// =====================================================
+function gerarIdProcessamento() {
+  const agora = new Date();
+  const data = Utilities.formatDate(agora, Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
+  return `PROC-${data}`;
+}
+
+function gerarVersaoProcessamento(competencia) {
+  const rows = readSheetAsObjects(CONFIG.SHEETS.EXECUCOES);
+  const filtradas = rows.filter(r => r.competencia === competencia);
+  return `V${filtradas.length + 1}`;
+}
+
+function registrarExecucao(idProcessamento, competencia, versao, dataInicio, status, observacao) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.EXECUCOES);
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(DATABASE.execucoes);
+  }
+
+  sheet.appendRow([
+    idProcessamento,
+    competencia,
+    versao,
+    dataInicio,
+    '',
+    '',
+    status,
+    observacao
+  ]);
+}
+
+function finalizarExecucao(idProcessamento, dataFim, status, observacao) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.EXECUCOES);
+  const values = sheet.getDataRange().getValues();
+
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (values[i][0] === idProcessamento) {
+      sheet.getRange(i + 1, 5).setValue(dataFim);
+      sheet.getRange(i + 1, 7).setValue(status);
+      sheet.getRange(i + 1, 8).setValue(observacao);
+      return;
+    }
+  }
+}
+
+function registrarErro(idProcessamento, acao, mensagem, detalhe) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.ERROS);
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(DATABASE.erros);
+  }
+
+  sheet.appendRow([
+    new Date(),
+    idProcessamento,
+    acao,
+    mensagem,
+    detalhe || ''
+  ]);
+}
+
+function percentual(valor, base) {
+  const v = Number(valor || 0);
+  const b = Number(base || 0);
+
+  if (!b) return 0;
+
+  return v / b;
+}
+
+function normalizar(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
