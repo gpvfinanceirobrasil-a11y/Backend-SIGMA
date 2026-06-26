@@ -35,7 +35,7 @@ function processarSigma() {
 }
 
 function salvarMGR(result) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
   const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.MGR);
 
   sheet.clearContents();
