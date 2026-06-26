@@ -1,7 +1,7 @@
 function uploadRows(sheetName, rows) {
   if (!Array.isArray(rows)) throw new Error('rows deve ser um array.');
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
   const sheet = getOrCreateSheet(ss, sheetName);
 
   if (rows.length === 0) return { ok: true, sheet: sheetName, inserted: 0 };
@@ -19,7 +19,7 @@ function uploadRows(sheetName, rows) {
 }
 
 function readSheetAsObjects(sheetName) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) return [];
 
