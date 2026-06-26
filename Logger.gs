@@ -1,5 +1,5 @@
 function logAction(action, message) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
   const sheet = getOrCreateSheet(ss, CONFIG.SHEETS.LOGS);
 
   if (sheet.getLastRow() === 0) {
