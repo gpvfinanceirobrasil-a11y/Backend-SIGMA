@@ -4,8 +4,12 @@ function handleGet(e) {
 
     if (action === 'status') return jsonResponse(status());
     if (action === 'setup') return jsonResponse(setup());
+
     if (action === 'getDashboard') return jsonResponse(getDashboard());
     if (action === 'getMGR') return jsonResponse(getMGR());
+    if (action === 'getResultadoAtual') return jsonResponse(getResultadoAtual());
+    if (action === 'getHistorico') return jsonResponse(getHistorico(e.parameter));
+    if (action === 'listarCompetencias') return jsonResponse(listarCompetencias());
 
     return jsonResponse({
       ok: false,
@@ -24,10 +28,30 @@ function handlePost(e) {
     const action = body.action;
 
     if (action === 'setup') return jsonResponse(setup());
-    if (action === 'uploadReceitas') return jsonResponse(uploadRows(CONFIG.SHEETS.RECEITAS, body.rows || []));
-    if (action === 'uploadDespesas') return jsonResponse(uploadRows(CONFIG.SHEETS.DESPESAS, body.rows || []));
-    if (action === 'uploadRateios') return jsonResponse(uploadRows(CONFIG.SHEETS.RATEIOS, body.rows || []));
-    if (action === 'processarSigma') return jsonResponse(processarSigma());
+
+    if (action === 'uploadReceitas') {
+      return jsonResponse(uploadRows(CONFIG.SHEETS.RECEITAS, body.rows || []));
+    }
+
+    if (action === 'uploadDespesas') {
+      return jsonResponse(uploadRows(CONFIG.SHEETS.DESPESAS, body.rows || []));
+    }
+
+    if (action === 'uploadRateios') {
+      return jsonResponse(uploadRows(CONFIG.SHEETS.RATEIOS, body.rows || []));
+    }
+
+    if (action === 'uploadBase') {
+      return jsonResponse(uploadRows(CONFIG.SHEETS.BASE, body.rows || []));
+    }
+
+    if (action === 'uploadInadimplencia') {
+      return jsonResponse(uploadRows(CONFIG.SHEETS.INADIMPLENCIA, body.rows || []));
+    }
+
+    if (action === 'processarSigma') {
+      return jsonResponse(processarSigma(body.competencia || null));
+    }
 
     return jsonResponse({
       ok: false,
