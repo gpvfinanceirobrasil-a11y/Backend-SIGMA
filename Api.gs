@@ -9,7 +9,7 @@ function status() {
 }
 
 function setup() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSigmaSpreadsheet();
 
   createSheetIfNotExists(ss, CONFIG.SHEETS.RECEITAS, [
     'data_pagamento','mes_referente','projeto','placa','tipo_veiculo',
