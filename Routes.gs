@@ -4,7 +4,6 @@ function handleGet(e) {
 
     if (action === 'status') return jsonResponse(status());
     if (action === 'setup') return jsonResponse(setup());
-
     if (action === 'getDashboard') return jsonResponse(getDashboard());
     if (action === 'getMGR') return jsonResponse(getMGR());
     if (action === 'getResultadoAtual') return jsonResponse(getResultadoAtual());
@@ -27,46 +26,26 @@ function handlePost(e) {
   try {
     const body = JSON.parse(e.postData.contents || '{}');
     const action = body.action;
-if (action === 'uploadReceitas')
-  return jsonResponse(uploadRows(CONFIG.SHEETS.RECEITAS, body.rows || [], body.meta || {}));
-
-if (action === 'uploadDespesas')
-  return jsonResponse(uploadRows(CONFIG.SHEETS.DESPESAS, body.rows || [], body.meta || {}));
-
-if (action === 'uploadRateios')
-  return jsonResponse(uploadRows(CONFIG.SHEETS.RATEIOS, body.rows || [], body.meta || {}));
-
-if (action === 'uploadBase')
-  return jsonResponse(uploadRows(CONFIG.SHEETS.BASE, body.rows || [], body.meta || {}));
-
-if (action === 'uploadInadimplencia')
-  return jsonResponse(uploadRows(CONFIG.SHEETS.INADIMPLENCIA, body.rows || [], body.meta || {}));
 
     if (action === 'setup') return jsonResponse(setup());
 
-    if (action === 'uploadReceitas') {
-      return jsonResponse(uploadRows(CONFIG.SHEETS.RECEITAS, body.rows || []));
-    }
+    if (action === 'uploadReceitas')
+      return jsonResponse(uploadRows(CONFIG.SHEETS.RECEITAS, body.rows || [], body.meta || {}));
 
-    if (action === 'uploadDespesas') {
-      return jsonResponse(uploadRows(CONFIG.SHEETS.DESPESAS, body.rows || []));
-    }
+    if (action === 'uploadDespesas')
+      return jsonResponse(uploadRows(CONFIG.SHEETS.DESPESAS, body.rows || [], body.meta || {}));
 
-    if (action === 'uploadRateios') {
-      return jsonResponse(uploadRows(CONFIG.SHEETS.RATEIOS, body.rows || []));
-    }
+    if (action === 'uploadRateios')
+      return jsonResponse(uploadRows(CONFIG.SHEETS.RATEIOS, body.rows || [], body.meta || {}));
 
-    if (action === 'uploadBase') {
-      return jsonResponse(uploadRows(CONFIG.SHEETS.BASE, body.rows || []));
-    }
+    if (action === 'uploadBase')
+      return jsonResponse(uploadRows(CONFIG.SHEETS.BASE, body.rows || [], body.meta || {}));
 
-    if (action === 'uploadInadimplencia') {
-      return jsonResponse(uploadRows(CONFIG.SHEETS.INADIMPLENCIA, body.rows || []));
-    }
+    if (action === 'uploadInadimplencia')
+      return jsonResponse(uploadRows(CONFIG.SHEETS.INADIMPLENCIA, body.rows || [], body.meta || {}));
 
-    if (action === 'processarSigma') {
+    if (action === 'processarSigma')
       return jsonResponse(processarSigma(body.competencia || null));
-    }
 
     return jsonResponse({
       ok: false,
