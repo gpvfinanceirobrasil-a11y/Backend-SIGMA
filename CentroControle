@@ -1,0 +1,111 @@
+/**
+ * ==========================================
+ * SIGMA ERP
+ * Centro de Controle
+ * Versão: v0.0.2-beta
+ * ==========================================
+ */
+
+function getCentroControle(params) {
+  const competencia = params?.competencia || '';
+
+  const importacoes = readSheetAsObjects(CONFIG.SHEETS.IMPORTACOES);
+  const execucoes = readSheetAsObjects(CONFIG.SHEETS.EXECUCOES);
+  const resultadoAtual = readSheetAsObjects(CONFIG.SHEETS.RESULTADO_ATUAL);
+  const erros = readSheetAsObjects(CONFIG.SHEETS.ERROS);
+
+  const ultimasImportacoes = getStatusImportacoes(importacoes, competencia);
+  const ultimaExecucao = getUltimaExecucao(execucoes, competencia);
+
+  return {
+    ok: true,
+    data: {
+      api: 'online',
+      banco: 'online',
+      competencia: competencia,
+      ultimo_processamento: ultimaExecucao?.data_fim || ultimaExecucao?.data_inicio || '',
+      versao: ultimaExecucao?.versao || '',
+      status_processamento: ultimaExecucao?.status || 'sem_processamento',
+      importacoes: ultimasImportacoes,
+      resumo: getResumoControle(resultadoAtual),
+      alertas: getAlertasControle(ultimasImportacoes, erros)
+    }
+  };
+}
+
+function getStatusImportacoes(importacoes, competencia) {
+  const tipos = {
+    receitas: false,
+    despesas: false,
+    rateios: false,
+    base: false,
+    inadimplencia: false
+  };
+
+  importacoes.forEach(row => {
+    if (competencia && row.competencia !== competencia) return;
+
+    const tipo = normalizar(row.tipo_arquivo);
+
+    if (tipo.includes('receita')) tipos.receitas = true;
+    if (tipo.includes('despesa')) tipos.despesas = true;
+    if (tipo.includes('rateio')) tipos.rateios = true;
+    if (tipo === 'base') tipos.base = true;
+    if (tipo.includes('inadimplencia')) tipos.inadimplencia = true;
+  });
+
+  return tipos;
+}
+
+function getUltimaExecucao(execucoes, competencia) {
+  const filtradas = execucoes.filter(row => {
+    if (!competencia) return true;
+    return row.competencia === competencia;
+  });
+
+  if (!filtradas.length) return null;
+
+  return filtradas[filtradas.length - 1];
+}
+
+function getResumoControle(rows) {
+  return {
+    receita: getResultadoValor(rows, 'Dashboard', 'Receita Líquida'),
+    despesas: getResultadoValor(rows, 'Dashboard', 'Despesas'),
+    resultado: getResultadoValor(rows, 'Dashboard', 'Resultado'),
+    ativos: getResultadoQuantidade(rows, 'Performance', 'Ativos'),
+    producao: getResultadoQuantidade(rows, 'Performance', 'Produção'),
+    inadimplencia: getResultadoQuantidade(rows, 'Performance', 'Inadimplência')
+  };
+}
+
+function getResultadoValor(rows, modulo, indicador) {
+  const found = rows.find(row =>
+    normalizar(row.modulo) === normalizar(modulo) &&
+    normalizar(row.indicador) === normalizar(indicador)
+  );
+
+  return found ? Number(found.valor || 0) : 0;
+}
+
+function getResultadoQuantidade(rows, modulo, indicador) {
+  const found = rows.find(row =>
+    normalizar(row.modulo) === normalizar(modulo) &&
+    normalizar(row.indicador) === normalizar(indicador)
+  );
+
+  return found ? Number(found.quantidade || 0) : 0;
+}
+
+function getAlertasControle(importacoes, erros) {
+  const alertas = [];
+
+  Object.entries(importacoes).forEach(([tipo, status]) => {
+    if (!status) alertas.push(`Importação pendente: ${tipo}`);
+  });
+
+  if (erros && erros.length > 0) {
+    alertas.push('Existem registros na aba de erros.');
+  }
+  return alertas;
+}
