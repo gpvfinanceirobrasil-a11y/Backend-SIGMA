@@ -59,7 +59,7 @@ function calcularDashboardSigma(
 
   receitas.forEach(row => {
     const sociedade = normalizarSociedadeSigma(
-      row.sociedade || classificarSociedade(row.projeto)
+      row.sociedade || normalizarSociedadeSigma(row.projeto)
     );
 
     if (!totais[sociedade]) return;
@@ -71,7 +71,7 @@ function calcularDashboardSigma(
 
   despesas.forEach(row => {
     const sociedade = normalizarSociedadeSigma(
-      row.sociedade || classificarSociedade(row.projeto)
+      row.sociedade || normalizarSociedadeSigma(row.projeto)
     );
 
     if (!totais[sociedade]) return;
