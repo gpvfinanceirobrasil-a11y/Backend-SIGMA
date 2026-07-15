@@ -1,10 +1,24 @@
+/**
+ * ==========================================
+ * SIGMA ERP
+ * Processador Principal
+ * ==========================================
+ */
+
 function processarSigma(competencia) {
   const inicio = new Date();
   const idProcessamento = gerarIdProcessamento();
   const versao = gerarVersaoProcessamento(competencia);
 
   try {
-    registrarExecucao(idProcessamento, competencia, versao, inicio, 'em_processamento', 'Processamento iniciado.');
+    registrarExecucao(
+      idProcessamento,
+      competencia,
+      versao,
+      inicio,
+      'em_processamento',
+      'Processamento iniciado.'
+    );
 
     const receitas = readSheetAsObjects(CONFIG.SHEETS.RECEITAS);
     const despesas = readSheetAsObjects(CONFIG.SHEETS.DESPESAS);
@@ -13,13 +27,35 @@ function processarSigma(competencia) {
 
     const resultados = [];
 
-    resultados.push(...calcularDashboardSigma(idProcessamento, competencia, versao, receitas, despesas));
-    resultados.push(...calcularPerformanceSigma(idProcessamento, competencia, versao, base, inadimplencia));
+    resultados.push(
+      ...calcularDashboardSigma(
+        idProcessamento,
+        competencia,
+        versao,
+        receitas,
+        despesas
+      )
+    );
+
+    resultados.push(
+      ...calcularPerformanceSigma(
+        idProcessamento,
+        competencia,
+        versao,
+        base,
+        inadimplencia
+      )
+    );
 
     salvarResultadoAtual(resultados);
     salvarHistorico(resultados);
 
-    finalizarExecucao(idProcessamento, new Date(), 'concluido', 'Processamento concluído com sucesso.');
+    finalizarExecucao(
+      idProcessamento,
+      new Date(),
+      'concluido',
+      'Processamento concluído com sucesso.'
+    );
 
     return {
       ok: true,
@@ -34,12 +70,28 @@ function processarSigma(competencia) {
     };
 
   } catch (err) {
-    registrarErro(idProcessamento, 'processarSigma', err.message, err.stack);
-    finalizarExecucao(idProcessamento, new Date(), 'erro', err.message);
+    registrarErro(
+      idProcessamento,
+      'processarSigma',
+      err.message,
+      err.stack
+    );
+
+    finalizarExecucao(
+      idProcessamento,
+      new Date(),
+      'erro',
+      err.message
+    );
 
     return errorResponse(err);
   }
 }
+
+
+/* =====================================================
+   DASHBOARD FINANCEIRO
+===================================================== */
 
 function calcularDashboardSigma(
   idProcessamento,
@@ -52,33 +104,48 @@ function calcularDashboardSigma(
   const sociedades = ['GPV', 'BJ', 'BR'];
 
   const totais = {
-    GPV: { receita: 0, despesa: 0 },
-    BJ: { receita: 0, despesa: 0 },
-    BR: { receita: 0, despesa: 0 }
+    GPV: {
+      receita: 0,
+      despesa: 0
+    },
+    BJ: {
+      receita: 0,
+      despesa: 0
+    },
+    BR: {
+      receita: 0,
+      despesa: 0
+    }
   };
 
   receitas.forEach(row => {
     const sociedade = normalizarSociedadeSigma(
-      row.sociedade || normalizarSociedadeSigma(row.projeto)
+      row.sociedade || row.projeto
     );
 
     if (!totais[sociedade]) return;
 
-    totais[sociedade].receita += parseMoney(
-      row.valor_liquido || row.valor_pagamento || 0
+    const valor = parseMoney(
+      row.valor_liquido ||
+      row.valor_pagamento ||
+      0
     );
+
+    totais[sociedade].receita += valor;
   });
 
   despesas.forEach(row => {
     const sociedade = normalizarSociedadeSigma(
-      row.sociedade || normalizarSociedadeSigma(row.projeto)
+      row.sociedade || row.projeto
     );
 
     if (!totais[sociedade]) return;
 
-    totais[sociedade].despesa += Math.abs(
+    const valor = Math.abs(
       parseMoney(row.valor || 0)
     );
+
+    totais[sociedade].despesa += valor;
   });
 
   const resultados = [];
@@ -101,6 +168,7 @@ function calcularDashboardSigma(
         percentual(receita, receita),
         data
       ),
+
       montarResultado(
         idProcessamento,
         competencia,
@@ -113,6 +181,7 @@ function calcularDashboardSigma(
         percentual(despesa, receita),
         data
       ),
+
       montarResultado(
         idProcessamento,
         competencia,
@@ -129,12 +198,14 @@ function calcularDashboardSigma(
   });
 
   const receitaConsolidada = sociedades.reduce(
-    (total, sociedade) => total + totais[sociedade].receita,
+    (total, sociedade) =>
+      total + totais[sociedade].receita,
     0
   );
 
   const despesaConsolidada = sociedades.reduce(
-    (total, sociedade) => total + totais[sociedade].despesa,
+    (total, sociedade) =>
+      total + totais[sociedade].despesa,
     0
   );
 
@@ -151,9 +222,13 @@ function calcularDashboardSigma(
       'CONSOLIDADO',
       receitaConsolidada,
       '',
-      percentual(receitaConsolidada, receitaConsolidada),
+      percentual(
+        receitaConsolidada,
+        receitaConsolidada
+      ),
       data
     ),
+
     montarResultado(
       idProcessamento,
       competencia,
@@ -163,9 +238,13 @@ function calcularDashboardSigma(
       'CONSOLIDADO',
       despesaConsolidada,
       '',
-      percentual(despesaConsolidada, receitaConsolidada),
+      percentual(
+        despesaConsolidada,
+        receitaConsolidada
+      ),
       data
     ),
+
     montarResultado(
       idProcessamento,
       competencia,
@@ -175,7 +254,10 @@ function calcularDashboardSigma(
       'CONSOLIDADO',
       resultadoConsolidado,
       '',
-      percentual(resultadoConsolidado, receitaConsolidada),
+      percentual(
+        resultadoConsolidado,
+        receitaConsolidada
+      ),
       data
     )
   );
@@ -183,59 +265,246 @@ function calcularDashboardSigma(
   return resultados;
 }
 
-function normalizarSociedadeSigma(value) {
-  const sociedade = String(value || '')
-    .trim()
-    .toUpperCase();
 
-  if (sociedade === 'BJ') return 'BJ';
-  if (sociedade === 'BR') return 'BR';
-  if (sociedade === 'GPV') return 'GPV';
+/* =====================================================
+   CLASSIFICAÇÃO DA SOCIEDADE
+===================================================== */
+
+function normalizarSociedadeSigma(value) {
+  const texto = String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (!texto) {
+    return 'GPV';
+  }
+
+  if (
+    texto === 'bj' ||
+    texto.startsWith('bj.')
+  ) {
+    return 'BJ';
+  }
+
+  if (
+    texto === 'br' ||
+    texto.startsWith('br.')
+  ) {
+    return 'BR';
+  }
+
+  if (
+    texto === 'gpv' ||
+    texto.startsWith('gpv.')
+  ) {
+    return 'GPV';
+  }
+
+  const filiaisBJ = [
+    'anb',
+    'nigro',
+    'petrolina',
+    'sanharo',
+    'sao bento'
+  ];
+
+  const filiaisBR = [
+    'br adm',
+    'br. adm'
+  ];
+
+  if (
+    filiaisBJ.some(
+      filial => texto.includes(filial)
+    )
+  ) {
+    return 'BJ';
+  }
+
+  if (
+    filiaisBR.some(
+      filial => texto.includes(filial)
+    )
+  ) {
+    return 'BR';
+  }
 
   return 'GPV';
 }
 
-function calcularPerformanceSigma(idProcessamento, competencia, versao, base, inadimplencia) {
+
+/* =====================================================
+   PERFORMANCE
+===================================================== */
+
+function calcularPerformanceSigma(
+  idProcessamento,
+  competencia,
+  versao,
+  base,
+  inadimplencia
+) {
   const data = new Date();
 
-  const ativos = base.filter(row => normalizar(row.situacao) === 'ativo').length;
+  const ativos = base.filter(row => {
+    return normalizar(row.situacao) === 'ativo';
+  }).length;
 
   const producao = base.filter(row => {
     const origem = normalizar(row.origem);
-    return origem.includes('adesao') || origem.includes('producao');
+
+    return (
+      origem.includes('adesao') ||
+      origem.includes('producao')
+    );
   }).length;
 
   const inadimplentes = inadimplencia.length;
 
   const evasao = base.filter(row => {
     const situacao = normalizar(row.situacao);
-    return situacao === 'negativado' || situacao === 'recuperacao';
+
+    return (
+      situacao === 'negativado' ||
+      situacao === 'recuperacao'
+    );
   }).length;
 
   const cancelados = base.filter(row => {
     const situacao = normalizar(row.situacao);
-    return situacao === 'cancelado' || situacao === 'pre-cancelado' || situacao === 'pre_cancelado';
+
+    return (
+      situacao === 'cancelado' ||
+      situacao === 'pre-cancelado' ||
+      situacao === 'pre_cancelado'
+    );
   }).length;
 
   const reativacoes = base.filter(row => {
     const origem = normalizar(row.origem);
+
     return origem.includes('reativacao');
   }).length;
 
-  const saldo = producao + reativacoes - evasao - cancelados;
+  const saldo =
+    producao +
+    reativacoes -
+    evasao -
+    cancelados;
 
   return [
-    montarResultado(idProcessamento, competencia, versao, 'Performance', 'Ativos', 'CONSOLIDADO', '', ativos, 100, data),
-    montarResultado(idProcessamento, competencia, versao, 'Performance', 'Produção', 'CONSOLIDADO', '', producao, percentual(producao, ativos), data),
-    montarResultado(idProcessamento, competencia, versao, 'Performance', 'Inadimplência', 'CONSOLIDADO', '', inadimplentes, percentual(inadimplentes, ativos), data),
-    montarResultado(idProcessamento, competencia, versao, 'Performance', 'Evasão', 'CONSOLIDADO', '', evasao, percentual(evasao, ativos), data),
-    montarResultado(idProcessamento, competencia, versao, 'Performance', 'Cancelados', 'CONSOLIDADO', '', cancelados, percentual(cancelados, ativos), data),
-    montarResultado(idProcessamento, competencia, versao, 'Performance', 'Reativações', 'CONSOLIDADO', '', reativacoes, percentual(reativacoes, ativos), data),
-    montarResultado(idProcessamento, competencia, versao, 'Performance', 'Saldo da Performance', 'CONSOLIDADO', '', saldo, percentual(saldo, ativos), data)
+    montarResultado(
+      idProcessamento,
+      competencia,
+      versao,
+      'Performance',
+      'Ativos',
+      'CONSOLIDADO',
+      '',
+      ativos,
+      1,
+      data
+    ),
+
+    montarResultado(
+      idProcessamento,
+      competencia,
+      versao,
+      'Performance',
+      'Produção',
+      'CONSOLIDADO',
+      '',
+      producao,
+      percentual(producao, ativos),
+      data
+    ),
+
+    montarResultado(
+      idProcessamento,
+      competencia,
+      versao,
+      'Performance',
+      'Inadimplência',
+      'CONSOLIDADO',
+      '',
+      inadimplentes,
+      percentual(inadimplentes, ativos),
+      data
+    ),
+
+    montarResultado(
+      idProcessamento,
+      competencia,
+      versao,
+      'Performance',
+      'Evasão',
+      'CONSOLIDADO',
+      '',
+      evasao,
+      percentual(evasao, ativos),
+      data
+    ),
+
+    montarResultado(
+      idProcessamento,
+      competencia,
+      versao,
+      'Performance',
+      'Cancelados',
+      'CONSOLIDADO',
+      '',
+      cancelados,
+      percentual(cancelados, ativos),
+      data
+    ),
+
+    montarResultado(
+      idProcessamento,
+      competencia,
+      versao,
+      'Performance',
+      'Reativações',
+      'CONSOLIDADO',
+      '',
+      reativacoes,
+      percentual(reativacoes, ativos),
+      data
+    ),
+
+    montarResultado(
+      idProcessamento,
+      competencia,
+      versao,
+      'Performance',
+      'Saldo da Performance',
+      'CONSOLIDADO',
+      '',
+      saldo,
+      percentual(saldo, ativos),
+      data
+    )
   ];
 }
 
-function montarResultado(idProcessamento, competencia, versao, modulo, indicador, sociedade, valor, quantidade, percentual, data) {
+
+/* =====================================================
+   MODELO DO RESULTADO
+===================================================== */
+
+function montarResultado(
+  idProcessamento,
+  competencia,
+  versao,
+  modulo,
+  indicador,
+  sociedade,
+  valor,
+  quantidade,
+  percentualResultado,
+  data
+) {
   return {
     id_processamento: idProcessamento,
     competencia,
@@ -248,7 +517,7 @@ function montarResultado(idProcessamento, competencia, versao, modulo, indicador
     estado: '',
     valor,
     quantidade,
-    percentual,
+    percentual: percentualResultado,
     versao,
     data_processamento: data
   };
